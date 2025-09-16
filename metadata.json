@@ -1,0 +1,6 @@
+{
+  "name": "BrandSpark",
+  "description": "An AI-powered logo and branding app. Generate new logos from a text description, or enhance your existing logos and sketches by describing your desired changes.",
+  "requestFramePermissions": [],
+  "prompt": ""
+}
