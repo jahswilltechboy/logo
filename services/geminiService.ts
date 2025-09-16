@@ -74,7 +74,19 @@ export const generateLogos = async (
         return [imageUrl];
 
     } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred during logo generation.';
+        let errorMessage = 'An unknown error occurred during logo generation.';
+        
+        if (err instanceof Error) {
+            const errorText = err.message;
+            if (errorText.includes('RESOURCE_EXHAUSTED') || errorText.includes('quota')) {
+                errorMessage = 'API quota exceeded. Please wait a few minutes and try again, or check your Google Cloud billing settings for higher limits.';
+            } else if (errorText.includes('INVALID_ARGUMENT') && errorText.includes('billed users')) {
+                errorMessage = 'This feature requires a paid Google Cloud account. Please upgrade your billing plan.';
+            } else {
+                errorMessage = errorText;
+            }
+        }
+        
         console.error('Logo generation error:', err);
         throw new Error(errorMessage);
     }
@@ -134,7 +146,19 @@ export const enhanceLogo = async (
         return imageUrl;
 
     } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred during logo enhancement.';
+        let errorMessage = 'An unknown error occurred during logo enhancement.';
+        
+        if (err instanceof Error) {
+            const errorText = err.message;
+            if (errorText.includes('RESOURCE_EXHAUSTED') || errorText.includes('quota')) {
+                errorMessage = 'API quota exceeded. Please wait a few minutes and try again, or check your Google Cloud billing settings for higher limits.';
+            } else if (errorText.includes('INVALID_ARGUMENT') && errorText.includes('billed users')) {
+                errorMessage = 'This feature requires a paid Google Cloud account. Please upgrade your billing plan.';
+            } else {
+                errorMessage = errorText;
+            }
+        }
+        
         console.error('Logo enhancement error:', err);
         throw new Error(errorMessage);
     }
