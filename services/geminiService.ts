@@ -28,7 +28,7 @@ const parseDataUrl = (dataUrl: string): { data: string; mimeType: string } => {
  * Generates logo images using AI based on a brand name and text prompt.
  * @param brandName The name of the brand.
  * @param prompt The text prompt describing the desired logo.
- * @returns A promise that resolves to an array of data URLs for the generated logos.
+ * @returns A promise that resolves to an array of data URLs for the generated logo.
  */
 export const generateLogos = async (
     brandName: string,
@@ -37,34 +37,41 @@ export const generateLogos = async (
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
     
     try {
-        console.log('Sending prompt to Gemini image generation model.');
+        console.log('Sending prompt to Gemini content generation model.');
         let fullPrompt = `A professional, modern logo for a brand named "${brandName}".`;
         if (prompt.trim()) {
             fullPrompt += ` The logo should be inspired by: "${prompt}".`;
         }
-        fullPrompt += ` Please generate 4 distinct variations on a clean, solid background. The logos should be suitable for use on websites and marketing materials. Do not include any text unless it is part of the brand name itself.`;
+        fullPrompt += ` Please generate a logo on a clean, solid background. The logo should be suitable for use on websites and marketing materials. Do not include any text unless it is part of the brand name itself.`;
 
-        const response = await ai.models.generateImages({
-            model: 'imagen-4.0-generate-001',
-            prompt: fullPrompt,
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash-image-preview',
+            contents: {
+                parts: [
+                    {
+                        text: fullPrompt,
+                    },
+                ],
+            },
             config: {
-              numberOfImages: 4,
-              outputMimeType: 'image/png',
-              aspectRatio: '1:1',
+                responseModalities: [Modality.IMAGE, Modality.TEXT],
             },
         });
         
-        if (!response.generatedImages || response.generatedImages.length === 0) {
-            throw new Error('The model did not return any images. This could be due to a safety policy violation or an issue with the prompt.');
+        const imagePart = response.candidates?.[0]?.content?.parts?.find(part => part.inlineData);
+
+        if (!imagePart || !imagePart.inlineData) {
+            const textPart = response.candidates?.[0]?.content?.parts?.find(part => part.text)?.text;
+            const defaultMessage = 'The model did not return an image. This could be due to a safety policy violation or an issue with the prompt.';
+            throw new Error(textPart || defaultMessage);
         }
 
-        const imageUrls = response.generatedImages.map(img => {
-            const base64ImageBytes: string = img.image.imageBytes;
-            return `data:image/png;base64,${base64ImageBytes}`;
-        });
+        const base64ImageBytes: string = imagePart.inlineData.data;
+        const mimeType: string = imagePart.inlineData.mimeType;
+        const imageUrl = `data:${mimeType};base64,${base64ImageBytes}`;
         
-        console.log(`Received ${imageUrls.length} generated logos.`);
-        return imageUrls;
+        console.log(`Received generated logo.`);
+        return [imageUrl];
 
     } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred during logo generation.';
